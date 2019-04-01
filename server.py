@@ -1,19 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Mar 27 10:17:32 2019
 
-@author: fc46411
-"""
 
 from flask import Flask, jsonify, request
 from multiprocessing import Value
 from google.cloud import bigquery
 
-#counter = Value('i', 0)
 app = Flask(__name__)
 
-a = ["hello"]
 help_message = """
 API Usage:
     POST /donorschoose/projects/new data={
@@ -69,9 +63,17 @@ def new_donation():
     return jsonify(a)
 
 #Projetos
-@app.route('/donorschoose/projects/findProjectsByDonor', methods=['GET'])
+@app.route('/donorschoose/projects/findByDonor', methods=['GET'])
 def find_by_donor():
-    city = request.args.get('donor', None)
+    donor = request.args.get('donor', None)
+    projects_table='`'+dataset_id+'.Projects`'
+    donations_table='`'+dataset_id+'.Donations`'
+    query=('SELECT Project_Title FROM ' + projects_table + ' WHERE Project_ID IN (SELECT Project_ID FROM '+ donations_table+' WHERE Donor_ID="'+donor+'") LIMIT 100')
+    query_job = bigclient.query(query)
+    rows = query_job.result()
+    answer = []
+    for row in rows:
+        answer.append(row.Project_Title)
     return jsonify(answer)
 
 @app.route('/donorschoose/projects/findByStatus', methods=['GET'])
