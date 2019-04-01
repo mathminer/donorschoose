@@ -37,8 +37,8 @@ API Usage:
             'amount': amount,
             'cart_seq': cart_seq
     }
-    GET /donorschoose/projects/findByDonor/?donor=v1&category=v2
-    GET /donorschoose/projects/findByStatus/?status=v1&category=v2
+    GET /donorschoose/projects/findByDonor/?donor=v1
+    GET /donorschoose/projects/findByStatus/?status=v1
     GET /donorschoose/projects/findByNeed/?state=v1
 """
 """    
@@ -71,14 +71,12 @@ def new_donation():
 #Projetos
 @app.route('/donorschoose/projects/findProjectsByDonor', methods=['GET'])
 def find_by_donor():
-    city = request.args.get('city', None)
-    category = request.args.get('category', None)
+    city = request.args.get('donor', None)
     return jsonify(answer)
 
 @app.route('/donorschoose/projects/findByStatus', methods=['GET'])
 def find_by_status():
     status = request.args.get('status', None)
-    category = request.args.get('category', None)
     projects_table='`'+dataset_id+'.Projects`'
     query=('SELECT Project_Title FROM ' + projects_table + ' WHERE Project_Current_Status="'+status+'" LIMIT 100')
     query_job = bigclient.query(query)
