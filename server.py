@@ -5,6 +5,7 @@
 from flask import Flask, jsonify, request
 from multiprocessing import Value
 from google.cloud import bigquery
+import datetime
 
 app = Flask(__name__)
 
@@ -48,6 +49,8 @@ bigclient=bigquery.Client()
 dataset_id = 'handy-zephyr-235119.donorschoose'
 dataset_ref = bigclient.dataset(dataset_id)
 dataset = bigquery.Dataset(dataset_ref)
+projects_table='`'+dataset_id+'.Projects`'
+donations_table='`'+dataset_id+'.Donations`'
 
 @app.route('/donorschoose/projects/new', methods=['POST'])
 def new_project():
@@ -57,30 +60,34 @@ def new_project():
 
 @app.route('/donorschoose/donations/new', methods=['POST'])
 def new_donation():
-    payload = request.json
-     #query the database
-     #return the results with jsonify(result)
-    return jsonify(a)
+    donation = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(32))
+    donor = request.args.get('donor', None)
+    donor_opt = request.args.get('donor_opt', None)
+    amount = request.args.get('amount', None)
+    cart_seq = request.args.get('cart_seq', None)
+    project_id = request.args.get('project_id', None)
+    date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+    print(date)
+    query=('INSERT INTO '+ donations_table + ' (Donation_ID, Donor_ID, Project_ID, Donation_Included_Optional_Donation, Donor_Amount, Donor_Cart_Sequence, Donation_Received_Date)\
+    VALUES (' + donation + ',' + donor + ',' + project_id + ',' + donor_opt + ',' + amount + ',' + cart_seq + ',' + date + ')')
+    return jsonify("200 OK")
 
 #Projetos
 @app.route('/donorschoose/projects/findByDonor', methods=['GET'])
 def find_by_donor():
     donor = request.args.get('donor', None)
-    projects_table='`'+dataset_id+'.Projects`'
-    donations_table='`'+dataset_id+'.Donations`'
-    query=('SELECT Project_Title FROM ' + projects_table + ' WHERE Project_ID IN (SELECT Project_ID FROM '+ donations_table+' WHERE Donor_ID="'+donor+'") LIMIT 100')
+    query=('SELECT Project_Title, Project_ID FROM ' + projects_table + ' WHERE Project_ID IN (SELECT Project_ID FROM '+ donations_table+' WHERE Donor_ID="'+donor+'") LIMIT 100')
     query_job = bigclient.query(query)
     rows = query_job.result()
     answer = []
     for row in rows:
-        answer.append(row.Project_Title)
+        answer.append(row.Project_Title, row.Project_ID)
     return jsonify(answer)
 
 @app.route('/donorschoose/projects/findByStatus', methods=['GET'])
 def find_by_status():
     status = request.args.get('status', None)
-    projects_table='`'+dataset_id+'.Projects`'
-    query=('SELECT Project_Title FROM ' + projects_table + ' WHERE Project_Current_Status="'+status+'" LIMIT 100')
+    query=('SELECT Project_Title, Project_ID FROM ' + projects_table + ' WHERE Project_Current_Status="'+status+'" LIMIT 100')
     query_job = bigclient.query(query)
     rows = query_job.result()
     answer = []
@@ -91,7 +98,16 @@ def find_by_status():
 @app.route('/donorschoose/projects/findByNeed', methods=['GET'])
 def find_by_need():
     state = request.args.get('state', None)
-     #query the database
+    #query the database
+    query=('SELECT Project_Title, Project_ID FROM ' + projects_table +\
+           ' WHERE Project_ID IN (SELECT SUM(Donation_Amount) FROM ' + donations_table +\
+           ' WHERE Project_ID IN (SELECT Project_ID FROM ' + projects_table + '))')
+    query_job = bigclient.query(query)
+    rows = query_job.result()
+    answer = []
+    for row in rows:
+        answer.append(row.Project_Title, row.Project_ID)
+    return jsonify(answer)
     return jsonify(a)
 
 if __name__ == '__main__':
