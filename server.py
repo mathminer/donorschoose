@@ -99,9 +99,33 @@ def find_by_status():
 def find_by_need():
     state = request.args.get('state', None)
     #query the database
+    '''
     query=('SELECT Project_Title, Project_ID FROM ' + projects_table +\
            ' WHERE Project_ID IN (SELECT SUM(Donation_Amount) FROM ' + donations_table +\
            ' WHERE Project_ID IN (SELECT Project_ID FROM ' + projects_table + '))')
+    '''
+    query = ('SELECT \
+                S.School_State, \
+                S.School_Name, \
+                SUM(P.Project_Cost)  AS Soma_custo_projectos , \
+                SUM(D.Donation_Amount) AS Total_Doacoes,\
+                SUM(P.Project_Cost) - SUM(D.Donation_Amount) AS Diferenca \
+                FROM ' + Schools_table   + ' AS S,' \
+                       + Projects_table  + ' AS P,' \
+                       + Donations_table + ' AS D \
+                WHERE \
+                S.School_ID = P.School_ID AND \
+                D.Project_ID = P.Project_ID AND \
+                P.Project_Current_Status = "Live" AND \
+                S.School_State = '+state+' \
+                GROUP BY \
+                P.School_ID, \
+                S.School_State, \
+                S.School_Name \
+                ORDER BY Diferenca DESC \
+                LIMIT 10;)
+    
+    
     query_job = bigclient.query(query)
     rows = query_job.result()
     answer = []
