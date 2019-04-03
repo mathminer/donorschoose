@@ -75,7 +75,7 @@ def find_by_donor():
     rows = query_job.result()
     answer = []
     for row in rows:
-        answer.append(row.Project_Title, row.Project_ID)
+        answer.append(row.Project_Title + " - " + row.Project_ID)
     return jsonify(answer)
 
 
@@ -87,7 +87,7 @@ def find_by_status():
     rows = query_job.result()
     answer = []
     for row in rows:
-        answer.append(row.Project_Title)
+        answer.append(row.Project_Title + " - " + Project_ID)
     return jsonify(answer)
 
 
@@ -120,7 +120,7 @@ def find_by_need():
     rows = query_job.result()
     answer = []
     for row in rows:
-        answer.append(row.Project_Title, row.Project_ID, row.Diferenca)
+        answer.append(row.School_Name + " - " + str(row.Diferenca))
     return jsonify(answer)
 
 if __name__ == '__main__':
