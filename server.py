@@ -12,13 +12,13 @@ import string
 app = Flask(__name__)
 
 bigclient=bigquery.Client()
-dataset_id = 'handy-zephyr-235119.donorschoose'
+dataset_id = "handy-zephyr-235119.donorschoose"
 dataset_ref = bigclient.dataset(dataset_id)
 dataset = bigquery.Dataset(dataset_ref)
 
-projects_table = '`'+dataset_id+'.Projects`'
-donations_table = '`'+dataset_id+'.Donations`'
-schools_table = '`'+dataset_id+'.Schools`'
+projects_table = dataset_id+'.Projects'
+donations_table = dataset_id+'.Donations'
+schools_table = dataset_id+'.Schools'
 
 
 @app.route('/donorschoose/projects/new', methods=['POST'])
@@ -50,7 +50,7 @@ def new_project():
     res = bigclient.query(query)
     return jsonify(res)
 
-
+# http://127.0.0.1:5000/donorschoose/donations/new?donor=000210a2a948e929d8e04897dc921d91&donor_opt=true&amount=50&cart_seq=1&project_id=b8b63629e8c460ba90f64695cb3e0c30
 @app.route('/donorschoose/donations/new', methods=['POST'])
 def new_donation():
     donation = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(32))
@@ -60,17 +60,30 @@ def new_donation():
     cart_seq = request.args.get('cart_seq', None)
     project_id = request.args.get('project_id', None)
     date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S %Z")
-    
-    query=('INSERT INTO '+ donations_table + ' (Donation_ID, Donor_ID, Project_ID, Donation_Included_Optional_Donation, Donor_Amount, Donor_Cart_Sequence, Donation_Received_Date)\
-    VALUES (' + donation + ',' + donor + ',' + project_id + ',' + donor_opt + ',' + amount + ',' + cart_seq + ',' + date + ')')
+    '''
+    query=('INSERT INTO '+ donations_table + ' (Donation_ID, Donor_ID, Project_ID, Donation_Included_Optional_Donation, Donor_Amount, Donor_Cart_Sequence, Donation_Received_Date) VALUES (' + donation + ',' + donor + ',' + project_id + ',' + donor_opt + ',' + amount + ',' + cart_seq + ',' + date + ')')
     res = bigclient.query(query)
-    return jsonify(res)
+    '''
+    schema = [
+            bigquery.SchemaField('Project_ID','STRING',mode='NULLABLE'),
+            bigquery.SchemaField('Donation_ID','STRING',mode='NULLABLE'),
+            bigquery.SchemaField('Donor_ID','STRING',mode='NULLABLE'),
+            bigquery.SchemaField('Donation_Included_Optional_Donation','BOOLEAN',mode='NULLABLE'),
+            bigquery.SchemaField('Donation_Amount','FLOAT',mode='NULLABLE'),
+            bigquery.SchemaField('Donor_Cart_Sequence','STRING',mode='NULLABLE'),
+            bigquery.SchemaField('Donation_Received_Date','STRING',mode='NULLABLE'),
+            ]
+    row = [(project_id,donation,donor,donor_opt,amount,cart_seq,date)]
+    errors = bigclient.insert_rows(donations_table,row,selected_fields=schema)
+    assert errors == []
+    return jsonify("ok")
 
 
 @app.route('/donorschoose/projects/findByDonor', methods=['GET'])
 def find_by_donor():
     donor = request.args.get('donor', None)
-    query=('SELECT Project_Title, Project_ID FROM ' + projects_table + ' WHERE Project_ID IN (SELECT Project_ID FROM '+ donations_table+' WHERE Donor_ID="'+donor+'") LIMIT 100')
+    query=('SELECT Project_Title, Project_ID FROM `' + projects_table + '` WHERE Project_ID IN (SELECT Project_ID FROM `'\
+            + donations_table + '` WHERE Donor_ID="'+donor+'") LIMIT 100')
     query_job = bigclient.query(query)
     rows = query_job.result()
     answer = []
@@ -82,12 +95,12 @@ def find_by_donor():
 @app.route('/donorschoose/projects/findByStatus', methods=['GET'])
 def find_by_status():
     status = request.args.get('status', None)
-    query=('SELECT Project_Title, Project_ID FROM ' + projects_table + ' WHERE Project_Current_Status="'+status+'" LIMIT 100')
+    query=('SELECT Project_Title, Project_ID FROM `' + projects_table + '` WHERE Project_Current_Status="'+status+'" LIMIT 100')
     query_job = bigclient.query(query)
     rows = query_job.result()
     answer = []
     for row in rows:
-        answer.append(row.Project_Title + " - " + Project_ID)
+        answer.append(row.Project_Title + " - " + row.Project_ID)
     return jsonify(answer)
 
 
@@ -101,9 +114,9 @@ def find_by_need():
                 SUM(P.Project_Cost)  AS Soma_custo_projectos , \
                 SUM(D.Donation_Amount) AS Total_Doacoes,\
                 SUM(P.Project_Cost) - SUM(D.Donation_Amount) AS Diferenca \
-                FROM ' + schools_table   + ' AS S,' \
-                       + projects_table  + ' AS P,' \
-                       + donations_table + ' AS D \
+                FROM `' + schools_table   + '` AS S,`' \
+                       + projects_table  + '` AS P,`' \
+                       + donations_table + '` AS D \
                 WHERE \
                 S.School_ID = P.School_ID AND \
                 D.Project_ID = P.Project_ID AND \
