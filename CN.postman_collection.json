@@ -1,0 +1,330 @@
+{
+	"info": {
+		"_postman_id": "5477961d-a12a-4eea-9e98-7006fbecac44",
+		"name": "CN",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "new donation",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"donor\": \"000210a2a948e929d8e04897dc921d91\",\n\t\"donor_opt\": \"true\",\n\t\"amount\": 50,\n\t\"cart_seq\": 1,\n\t\"project_id\": \"b28f83235ecc9a73d3f935b21c236e7d\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5000/donorschoose/donations/new?",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"donations",
+						"new"
+					],
+					"query": [
+						{
+							"key": "donor",
+							"value": "000210a2a948e929d8e04897dc921d91",
+							"disabled": true
+						},
+						{
+							"key": "donor_opt",
+							"value": "true",
+							"disabled": true
+						},
+						{
+							"key": "amount",
+							"value": "50",
+							"disabled": true
+						},
+						{
+							"key": "cart_seq",
+							"value": "1",
+							"disabled": true
+						},
+						{
+							"key": "project_id",
+							"value": "b8b63629e8c460ba90f64695cb3e0c30",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "by need",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/donorschoose/projects/findByNeed?state=\"Texas\"",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"findByNeed"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "\"Texas\""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "by donor",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:5000/donorschoose/projects/findByDonor?donor=000210a2a948e929d8e04897dc921d91",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"findByDonor"
+					],
+					"query": [
+						{
+							"key": "donor",
+							"value": "000210a2a948e929d8e04897dc921d91"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "by status",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:5000/donorschoose/projects/findByStatus?status=Live",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"findByStatus"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "Live"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "new project",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"school_id\":\"9c3772e84e51667f855219508d8678b8\",\n\t\"teacher_id\":\"339bd5a9e445d68a74d65b99cd325397\",\n\t\"proj_type\":\"Teacher-Led\",\n\t\"proj_essay\":\"This project is fantastic\",\n\t\"proj_title\":\"Fantastic New Project\",\n\t\"proj_short_description\":\"Fantastic\",\n\t\"proj_need_stat\":\"Need good grade\",\n\t\"proj_category\":\"Masters degree\",\n\t\"proj_sub_categ\":\"Cloud Computing\",\n\t\"proj_grade_level\":\"Master\",\n\t\"proj_resource\":\"Tecnology\",\n\t\"proj_cost\":\"1233\",\n\t\"proj_exp_date\":\"2019-06-30\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5000/donorschoose/projects/new",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"new"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "by teacher",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:5000/donorschoose/projects/findByTeacher?teacher_id=339bd5a9e445d68a74d65b99cd325397",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"findByTeacher"
+					],
+					"query": [
+						{
+							"key": "teacher_id",
+							"value": "339bd5a9e445d68a74d65b99cd325397"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update prefix",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/donorschoose/teachers/?teacher_id=339bd5a9e445d68a74d65b99cd325397&prefix=Ms.",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"teachers",
+						""
+					],
+					"query": [
+						{
+							"key": "teacher_id",
+							"value": "339bd5a9e445d68a74d65b99cd325397"
+						},
+						{
+							"key": "prefix",
+							"value": "Ms."
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "project details",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:5000/donorschoose/projects/?project_id=b17cbf48f983c9b60ea11ba642473c29",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						""
+					],
+					"query": [
+						{
+							"key": "project_id",
+							"value": "b17cbf48f983c9b60ea11ba642473c29"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "by school",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:5000/donorschoose/projects/findBySchool?school_id=9cd2a0355c05d4733cb24d4b01d3cc2d",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"findBySchool"
+					],
+					"query": [
+						{
+							"key": "school_id",
+							"value": "9cd2a0355c05d4733cb24d4b01d3cc2d"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
