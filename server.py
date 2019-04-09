@@ -7,7 +7,6 @@ from google.cloud import bigquery
 import datetime
 import random
 import string
-import config
 
 app = Flask(__name__)
 
