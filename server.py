@@ -75,6 +75,7 @@ def new_project():
             bigquery.SchemaField('Project_Need_Statement','STRING',mode='NULLABLE'),
             bigquery.SchemaField('Project_Subject_Category_Tree','STRING',mode='NULLABLE'),
             bigquery.SchemaField('Project_Subject_Subcategory_Tree','STRING',mode='NULLABLE'),
+            bigquery.SchemaField('Project_Grade_Level','STRING',mode='NULLABLE'),
             bigquery.SchemaField('Project_Resource_Category','STRING',mode='NULLABLE'),
             bigquery.SchemaField('Project_Cost','STRING',mode='NULLABLE'),
             bigquery.SchemaField('Project_Posted_Date','STRING',mode='NULLABLE'),
@@ -82,7 +83,8 @@ def new_project():
             bigquery.SchemaField('Project_Current_Status','STRING',mode='NULLABLE')
             ]
     
-    row = [(proj,school_id,teacher_id,proj_type,proj_title,proj_essay,proj_short_description,proj_need_stat,proj_category,proj_sub_categ,proj_grade_level,proj_resource,proj_cost,proj_posted_date,proj_exp_date,'Live')]
+    row = [(proj,school_id,teacher_id,proj_type,proj_title,proj_essay,proj_short_description,proj_need_stat,\
+            proj_category,proj_sub_categ,proj_grade_level,proj_resource,proj_cost,proj_posted_date,proj_exp_date,'Live')]
     
     errors = bigclient.insert_rows(projects_table,row,selected_fields=schema)
     assert(errors == [])
