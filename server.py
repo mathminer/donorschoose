@@ -279,5 +279,9 @@ def update_teacher_prefix():
     
     return jsonify("Prefix updated with success")
 
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify("Bem-vindo ao donorschoose!")
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000)
