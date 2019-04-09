@@ -7,6 +7,7 @@ from google.cloud import bigquery
 import datetime
 import random
 import string
+import config
 
 app = Flask(__name__)
 
@@ -19,6 +20,31 @@ projects_table = dataset_id+'.Projects'
 donations_table = dataset_id+'.Donations'
 schools_table = dataset_id+'.Schools'
 teachers_table = dataset_id+'.Teachers'
+
+
+@app.route('/test1')
+def test1():
+    return "Hello World!"
+
+@app.route('/test2', methods=['GET'])
+def test2():
+    
+    status = request.args.get('status', None)
+    
+    query = ('SELECT Project_Title, Project_ID FROM `' + projects_table +\
+             '` LIMIT 3')
+    
+    query_job = bigclient.query(query)
+    rows = query_job.result()
+    
+    answer = []
+    for row in rows:
+        answer.append(row.Project_ID + " - " + row.Project_Title)
+    
+    return jsonify(answer)
+
+
+
 
 @app.route('/donorschoose/projects/new', methods=['POST'])
 def new_project():
@@ -50,7 +76,6 @@ def new_project():
             bigquery.SchemaField('Project_Need_Statement','STRING',mode='NULLABLE'),
             bigquery.SchemaField('Project_Subject_Category_Tree','STRING',mode='NULLABLE'),
             bigquery.SchemaField('Project_Subject_Subcategory_Tree','STRING',mode='NULLABLE'),
-            bigquery.SchemaField('Project_Grade_Level','STRING',mode='NULLABLE'),
             bigquery.SchemaField('Project_Resource_Category','STRING',mode='NULLABLE'),
             bigquery.SchemaField('Project_Cost','STRING',mode='NULLABLE'),
             bigquery.SchemaField('Project_Posted_Date','STRING',mode='NULLABLE'),
@@ -58,11 +83,10 @@ def new_project():
             bigquery.SchemaField('Project_Current_Status','STRING',mode='NULLABLE')
             ]
     
-    row = [(proj,school_id,teacher_id,proj_type,proj_title,proj_essay,proj_short_description,proj_need_stat,\
-            proj_category,proj_sub_categ,proj_grade_level,proj_resource,proj_cost,proj_posted_date,proj_exp_date,'Live')]
+    row = [(proj,school_id,teacher_id,proj_type,proj_title,proj_essay,proj_short_description,proj_need_stat,proj_category,proj_sub_categ,proj_grade_level,proj_resource,proj_cost,proj_posted_date,proj_exp_date,'Live')]
     
     errors = bigclient.insert_rows(projects_table,row,selected_fields=schema)
-    AssertionError(errors == [])
+    assert(errors == [])
     
     return jsonify("new project created with success")
 
@@ -90,7 +114,7 @@ def new_donation():
     row = [(project_id,donation,donor,donor_opt,amount,cart_seq,date)]
    
     errors = bigclient.insert_rows(donations_table,row,selected_fields=schema)
-    AssertionError(errors == [])
+    assert(errors == [])
     
     return jsonify("new donation concluded with success")
 
@@ -241,7 +265,7 @@ def find_by_need():
                 S.School_ID = P.School_ID AND \
                 D.Project_ID = P.Project_ID AND \
                 P.Project_Current_Status = "Live" AND \
-                S.School_State = '+state+' \
+                S.School_State = '+str(state)+' \
                 GROUP BY \
                 P.School_ID, \
                 P.Project_Cost,\
