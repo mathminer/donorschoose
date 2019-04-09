@@ -87,7 +87,7 @@ def new_project():
             proj_category,proj_sub_categ,proj_grade_level,proj_resource,proj_cost,proj_posted_date,proj_exp_date,'Live')]
     
     errors = bigclient.insert_rows(projects_table,row,selected_fields=schema)
-    assert(errors == [])
+    AssertionError(errors == [])
     
     return jsonify("new project created with success")
 
@@ -115,7 +115,7 @@ def new_donation():
     row = [(project_id,donation,donor,donor_opt,amount,cart_seq,date)]
    
     errors = bigclient.insert_rows(donations_table,row,selected_fields=schema)
-    assert(errors == [])
+    AssertionError(errors == [])    
     
     return jsonify("new donation concluded with success")
 
