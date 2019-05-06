@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 from flask import Flask, jsonify, request
 from google.cloud import bigquery
 import datetime
@@ -10,7 +9,7 @@ import string
 
 app = Flask(__name__)
 
-bigclient=bigquery.Client()
+bigclient=bigquery.Client(project="CloudComputing")
 dataset_id = "handy-zephyr-235119.donorschoose"
 dataset_ref = bigclient.dataset(dataset_id)
 dataset = bigquery.Dataset(dataset_ref)
@@ -19,7 +18,6 @@ projects_table = dataset_id+'.Projects'
 donations_table = dataset_id+'.Donations'
 schools_table = dataset_id+'.Schools'
 teachers_table = dataset_id+'.Teachers'
-
 
 @app.route('/test1')
 def test1():
@@ -310,3 +308,4 @@ def home():
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000)
+    
