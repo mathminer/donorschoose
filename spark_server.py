@@ -7,10 +7,9 @@ findspark.init()
 
 from flask import Flask, jsonify, request
 from pyspark import SparkContext, SparkConf
-from pyspark.sql import SparkSession
-from pyspark.sql import SQLContext
-from pyspark.sql import Row
+from pyspark.sql import SparkSession, Row, SQLContext
 from pyspark.sql.types import StructType
+from pyspark.sql.functions import array, lit
 
 app = Flask(__name__)
 
@@ -23,29 +22,25 @@ spark = SparkSession \
 
 sql_sc = SQLContext(sc)
 
-datasetPath = "../dataset_donations/"
+## ----------------------------- SCHEMAS 
 
 schemaDonations = StructType.fromJson({'fields': [
-  {'metadata': {}, 'name': 'Project ID', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'Donation ID', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'Donor ID', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'Donation Included Optional Donation', 'nullable': True, 'type': 'boolean'},
-  {'metadata': {}, 'name': 'Donation Amount', 'nullable': True,'type': 'float'},
-  {'metadata': {}, 'name': 'Donor Cart Sequence', 'nullable': True, 'type': 'integer'},
-  {'metadata': {}, 'name': 'Donation Received Date', 'nullable': True, 'type': 'timestamp'}],
+  {'metadata': {}, 'name': 'Project_ID', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'Donation_ID', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'Donor_ID', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'Donation_Included_Optional_Donation', 'nullable': True, 'type': 'boolean'},
+  {'metadata': {}, 'name': 'Donation_Amount', 'nullable': True,'type': 'float'},
+  {'metadata': {}, 'name': 'Donor_Cart_Sequence', 'nullable': True, 'type': 'integer'},
+  {'metadata': {}, 'name': 'Donation_Received_Date', 'nullable': True, 'type': 'timestamp'}],
  'type': 'struct'})
-
-donationsPath = datasetPath + "Donations.csv"
 
 schemaDonors = StructType.fromJson({'fields': [
-  {'metadata': {}, 'name': 'Donor ID', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'Donor City', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'Donor State', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'Donor Is Teacher', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'Donor Zip', 'nullable': True,'type': 'string'}],
+  {'metadata': {}, 'name': 'Donor_ID', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'Donor_City', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'Donor_State', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'Donor_Is_Teacher', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'Donor_Zip', 'nullable': True,'type': 'string'}],
  'type': 'struct'})
-
-donorsPath = datasetPath + "Donors.csv"
 
 schemaProjects = StructType.fromJson({'fields': [
   {'metadata': {}, 'name': 'Project_ID', 'nullable': True, 'type': 'string'},
@@ -68,39 +63,51 @@ schemaProjects = StructType.fromJson({'fields': [
   {'metadata': {}, 'name': 'Project_Fully_Funded_Date', 'nullable': True, 'type': 'date'}],
  'type': 'struct'})
 
-projectsPath = datasetPath + "Projects.csv"
-
 schemaResources = StructType.fromJson({'fields': [
-  {'metadata': {}, 'name': 'Project ID', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'Resource Item Name', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'Resource Quantity', 'nullable': True, 'type': 'float'},
-  {'metadata': {}, 'name': 'Resource Unit_Price', 'nullable': True, 'type': 'float'},
-  {'metadata': {}, 'name': 'Resource Vendor Name', 'nullable': True,'type': 'string'}],
+  {'metadata': {}, 'name': 'Project_ID', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'Resource_Item_Name', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'Resource_Quantity', 'nullable': True, 'type': 'float'},
+  {'metadata': {}, 'name': 'Resource_Unit_Price', 'nullable': True, 'type': 'float'},
+  {'metadata': {}, 'name': 'Resource_Vendor_Name', 'nullable': True,'type': 'string'}],
  'type': 'struct'})
-
-resourcesPath = datasetPath + "Resources.csv"
 
 schemaSchools = StructType.fromJson({'fields': [
-  {'metadata': {}, 'name': 'School ID', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'School Name', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'School Metro Type', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'School Percentage Free Lunch', 'nullable': True,'type': 'integer'},
-  {'metadata': {}, 'name': 'School State', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'School Zip', 'nullable': True, 'type': 'integer'},
-  {'metadata': {}, 'name': 'School City', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'School County', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'School District', 'nullable': True, 'type': 'string'}],
+  {'metadata': {}, 'name': 'School_ID', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'School_Name', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'School_Metro_Type', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'School_Percentage_Free_Lunch', 'nullable': True,'type': 'integer'},
+  {'metadata': {}, 'name': 'School_State', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'School_Zip', 'nullable': True, 'type': 'integer'},
+  {'metadata': {}, 'name': 'School_City', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'School_County', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'School_District', 'nullable': True, 'type': 'string'}],
  'type': 'struct'})
-
-schoolsPath = datasetPath + "Schools.csv"
 
 schemaTeachers = StructType.fromJson({'fields': [
-  {'metadata': {}, 'name': 'Teacher ID', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'Teacher Prefix', 'nullable': True, 'type': 'string'},
-  {'metadata': {}, 'name': 'Teacher First Project Posted Date', 'nullable': True, 'type': 'date'}],
+  {'metadata': {}, 'name': 'Teacher_ID', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'Teacher_Prefix', 'nullable': True, 'type': 'string'},
+  {'metadata': {}, 'name': 'Teacher_First_Project_Posted_Date', 'nullable': True, 'type': 'date'}],
  'type': 'struct'})
 
+#-----------------------------PATHS
+
+datasetPath = "../dataset_donations/"
+donationsPath = datasetPath + "Donations.csv"
+donorsPath = datasetPath + "Donors.csv"
+projectsPath = datasetPath + "Projects.csv"
+resourcesPath = datasetPath + "Resources.csv"
+schoolsPath = datasetPath + "Schools.csv"
 teachersPath = datasetPath + "Teachers.csv"
+
+#-------------LOADS ---------------
+#o spark eh lazy por isso apenas faz as ops depois de uma accao. para nao estar a definir varias vezes o mesmo defino aqui uma vez
+
+donations =spark.read.schema(schemaDonations).format("csv").options(header="true").load(donationsPath)
+donors = spark.read.schema(schemaDonors).format("csv").options(header="true").load(donorsPath)
+projects = spark.read.schema(schemaProjects).format("csv").options(header="true").load(projectsPath)
+resources = spark.read.schema(schemaResources).format("csv").options(header="true").load(resourcesPath)
+schools = spark.read.schema(schemaSchools).format("csv").options(header="true").load(schoolsPath)
+teachers = spark.read.schema(schemaTeachers).format("csv").options(header="true").load(teachersPath)
 
 @app.route('/donorschoose/projects/new', methods=['POST'])
 def new_project():
@@ -137,11 +144,10 @@ def new_donation():
     return jsonify("new donation concluded with success")
 
 @app.route('/donorschoose/projects/', methods=['GET'])
-def porject_details():
+def project_details():
     
     project_id = request.args.get('project_id', None)
-    df = spark.read.schema(schemaProjects).format("csv").options(header="true").load(projectsPath)
-    result = df.filter(df.Project_ID == project_id).head(10)
+    result = projects.filter(projects.Project_ID == project_id).head(10)
     answer = [] 
     for row in result:
         answer.append("Title: " + str(row.Project_Title))
@@ -163,10 +169,17 @@ def porject_details():
 def find_by_donor():
     
     donor = request.args.get('donor', None)
-            
-    answer = []  
+   
+    projectos_doados = donations.filter(donations.Donor_ID == donor).select("Project_ID").head(10)
+    identificadores = []
+    for row in projectos_doados:
+        identificadores.append(str(row.Project_ID))
+    result = projects.filter(projects.Project_ID.isin(identificadores)).select("Project_ID","Project_Title").head(10)
+    answer = []
+    for row in result:
+       answer.append(str(row.Project_ID) + " - " + str(row.Project_Title))
+     
     return jsonify(answer)
-
 
 @app.route('/donorschoose/projects/findByStatus', methods=['GET'])
 def find_by_status():
