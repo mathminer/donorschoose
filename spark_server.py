@@ -185,16 +185,19 @@ def find_by_donor():
 def find_by_status():
     
     status = request.args.get('status', None)
-    
+    result = projects.filter(projects.Project_Current_Status == status).select("Project_ID","Project_Title").head(100)
 
-    answer = []    
+    answer = [] 
+    for row in result:
+        answer.append(str(row.Project_ID) + " - " + str(row.Project_Title))
     return jsonify(answer)
 
 @app.route('/donorschoose/projects/findByTeacher', methods=['GET'])
 def find_by_teacher():
     
     teacher = request.args.get('teacher_id', None)
-        
+    
+    
     answer = []
     return jsonify(answer)
 
@@ -202,9 +205,11 @@ def find_by_teacher():
 def find_by_school():
     
     school = request.args.get('school_id', None)
-    
+    result = projects.filter(projects.School_ID == school).select('Project_ID','Project_Title').head(100)
     answer = []
-
+    for row in result:
+        answer.append(str(row.Project_ID) + " - " + (row.Project_Title))
+        
     return jsonify(answer)
 
 @app.route('/donorschoose/projects/findByNeed', methods=['GET'])
