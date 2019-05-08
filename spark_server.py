@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import random
+import string
+import datetime
 
 import findspark
 findspark.init()
 
 from flask import Flask, jsonify, request
+
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SparkSession, SQLContext
 from pyspark.sql.types import StructType
@@ -108,62 +112,6 @@ resources = spark.read.schema(schemaResources).format("csv").options(header="tru
 schools = spark.read.schema(schemaSchools).format("csv").options(header="true").load(schoolsPath)
 teachers = spark.read.schema(schemaTeachers).format("csv").options(header="true").load(teachersPath)
 
-@app.route('/donorschoose/projects/new', methods=['POST'])
-def new_project():
-    
-    proj = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(32))
-    school_id = request.args.get('school_id', None)
-    teacher_id = request.args.get('teacher_id', None)
-    proj_type = request.args.get('proj_type', None)
-    proj_essay = request.args.get('proj_essay', None)
-    proj_title = request.args.get('proj_title', None)
-    proj_short_description = request.args.get('proj_short_description', None)
-    proj_need_stat = request.args.get('proj_need_stat', None)
-    proj_category = request.args.get('proj_category', None)
-    proj_sub_categ = request.args.get('proj_sub_categ', None)
-    proj_grade_level = request.args.get('proj_grade_level', None)
-    proj_resource = request.args.get('proj_resource', None)
-    proj_cost = request.args.get('proj_cost', None)
-    proj_exp_date = request.args.get('proj_exp_date', None)
-    proj_posted_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S %Z")
-    
-    return jsonify("new project created with success")
-
-@app.route('/donorschoose/donations/new', methods=['POST'])
-def new_donation():
-    
-    donation = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(32))
-    donor = request.args.get('donor', None)
-    donor_opt = request.args.get('donor_opt', None)
-    amount = request.args.get('amount', None)
-    cart_seq = request.args.get('cart_seq', None)
-    project_id = request.args.get('project_id', None)
-    date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S %Z")
-
-    return jsonify("new donation concluded with success")
-
-@app.route('/donorschoose/projects/', methods=['GET'])
-def project_details():
-    
-    project_id = request.args.get('project_id', None)
-    result = projects.filter(projects.Project_ID == project_id).head(10)
-    answer = [] 
-    for row in result:
-        answer.append("Title: " + str(row.Project_Title))
-        answer.append("School: " + str(row.School_ID))
-        answer.append("Teacher: " + str(row.Teacher_ID))
-        answer.append("Type: " + str(row.Project_Type))
-        answer.append("Category: " + str(row.Project_Subject_Category_Tree))
-        answer.append("Need: " + str(row.Project_Need_Statement))
-        answer.append("Resource Category: " + str(row.Project_Resource_Category))
-        answer.append("Grade Level: " + str(row.Project_Grade_Level_Category))
-        answer.append("Cost: " + str(row.Project_Cost) + "$")
-        answer.append("Posted on: " + str(row.Project_Posted_Date))
-        answer.append("Expires on: " + str(row.Project_Expiration_Date))
-        answer.append("Fully funded on: " +str( row.Project_Fully_Funded_Date))
-        answer.append("Status: " + str(row.Project_Current_Status))
-    return jsonify(answer)
-
 @app.route('/donorschoose/projects/findByDonor', methods=['GET'])
 def find_by_donor():
     
@@ -180,6 +128,7 @@ def find_by_donor():
     result = projects.filter(projects.Project_ID.isin(identificadores))\
     .select("Project_ID","Project_Title")\
     .head(10)
+
     answer = []
     for row in result:
        answer.append(str(row.Project_ID) + " - " + str(row.Project_Title))
@@ -194,9 +143,11 @@ def find_by_status():
     .select("Project_ID","Project_Title")\
     .head(100)
 
+
     answer = [] 
     for row in result:
         answer.append(str(row.Project_ID) + " - " + str(row.Project_Title))
+    
     return jsonify(answer)
 
 @app.route('/donorschoose/projects/findByTeacher', methods=['GET'])
@@ -229,7 +180,9 @@ def find_by_teacher():
 def find_by_school():
     
     school = request.args.get('school_id', None)
+    
     result = projects.filter(projects.School_ID == school).select('Project_ID','Project_Title').head(100)
+    
     answer = []
     for row in result:
         answer.append(str(row.Project_ID) + " - " + str(row.Project_Title))
@@ -241,18 +194,41 @@ def find_by_need():
     
     state = request.args.get('state', None)
 
-    answer = []
+    query = ('SELECT \
+                projects.School_ID,\
+                schools.School_State, \
+                schools.School_Name, \
+                projects.Project_ID, \
+                projects.Project_Cost,\
+                SUM(projects.Project_Cost)  AS Soma_custo_projectos , \
+                SUM(donations.Donation_Amount) AS Total_Doacoes,\
+                SUM(projects.Project_Cost) - SUM(donations.Donation_Amount) AS Diferenca \
+                FROM schools, projects, donations  \
+              WHERE \
+                schools.School_ID = projects.School_ID AND \
+                donations.Project_ID = projects.Project_ID AND \
+                projects.Project_Current_Status = "Live" AND \
+                schools.School_State = ' + str(state) + ' \
+              GROUP BY \
+                projects.School_ID, \
+                projects.Project_Cost,\
+                schools.School_State, \
+                projects.Project_ID, \
+                schools.School_Name \
+              ORDER BY Diferenca DESC \
+              LIMIT 10;')
 
+    result = spark.sql(query)
+    
+    answer = []
+    for row in result:
+        answer.append("Project: " + row.Project_ID)
+        answer.append("School: " + row.School_Name)
+        answer.append("Total Cost: " + str(row.Soma_custo_projectos) + "$")
+        answer.append("Missing: " + str(row.Diferenca) + "$")
+        answer.append("-----------------------")
     
     return jsonify(answer)
-
-@app.route('/donorschoose/teachers/', methods=['PUT'])
-def update_teacher_prefix():
-    
-    teacher = request.args.get('teacher_id', None)
-    prefix = request.args.get('prefix', None)
-      
-    return jsonify("Prefix updated with success")
 
 @app.route('/', methods=['GET'])
 def home():
