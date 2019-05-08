@@ -154,7 +154,11 @@ def find_by_status():
 def find_by_teacher():
     
     teacher = request.args.get('teacher_id', None)
-    projectos_professor = projects.filter(projects.Teacher_ID == teacher)\
+    
+    projects.createOrReplaceTempView('projects')
+    donations.createOrReplaceTempView('donations')
+    
+    '''projectos_professor = projects.filter(projects.Teacher_ID == teacher)\
     .select('Project_ID','Project_Title','Project_Cost','Project_Expiration_Date')
     
     lista_projectos = []
@@ -165,7 +169,15 @@ def find_by_teacher():
     .groupby('Project_ID')\
     .sum('Donation_Amount')
     
-    result = projectos_professor.join(doacoes, projectos_professor.Project_ID == doacoes.Project_ID)
+    result = projectos_professor.join(doacoes, projectos_professor.Project_ID == doacoes.Project_ID).show()'''
+    
+    query = ('SELECT P.Project_ID, P.Project_Title, P.Project_Cost, P.Project_Expiration_Date,\
+          SUM(D.Donation_Amount) as Total_Donated \
+          FROM projects  as P, donations as D\
+          WHERE P.Project_ID=D.Project_ID and Teacher_ID="' + teacher + '"\
+          GROUP BY P.Project_ID, P.Project_Title, P.Project_Cost, P.Project_Expiration_Date')
+    
+    result=spark.sql(query).head(100)
     
     answer = []
     for row in result:
@@ -193,6 +205,10 @@ def find_by_school():
 def find_by_need():
     
     state = request.args.get('state', None)
+    
+    projects.createOrReplaceTempView('projects')
+    schools.createOrReplaceTempView('schools')
+    donations.createOrReplaceTempView('donations')
 
     query = ('SELECT \
                 projects.School_ID,\
@@ -215,15 +231,14 @@ def find_by_need():
                 schools.School_State, \
                 projects.Project_ID, \
                 schools.School_Name \
-              ORDER BY Diferenca DESC \
-              LIMIT 10;')
+              ORDER BY Diferenca DESC')
 
-    result = spark.sql(query)
+    result = spark.sql(query).head(100)
     
     answer = []
     for row in result:
-        answer.append("Project: " + row.Project_ID)
-        answer.append("School: " + row.School_Name)
+        answer.append("Project: " + str(row.Project_ID))
+        answer.append("School: " + str(row.School_Name))
         answer.append("Total Cost: " + str(row.Soma_custo_projectos) + "$")
         answer.append("Missing: " + str(row.Diferenca) + "$")
         answer.append("-----------------------")
