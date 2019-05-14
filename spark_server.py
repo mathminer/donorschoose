@@ -11,8 +11,11 @@ findspark.init()
 from flask import Flask, jsonify, request
 
 from pyspark import SparkContext, SparkConf
-from pyspark.sql import SparkSession, SQLContext
-from pyspark.sql.types import StructType
+from pyspark.sql import SparkSession, SQLContext, types
+from pyspark.sql.types import StructType, IntegerType, StringType
+from pyspark.ml.feature import VectorAssembler
+from pyspark.mllib.regression import LinearRegressionModel
+from pyspark.sql.functions import Column
 
 app = Flask(__name__)
 
@@ -92,7 +95,7 @@ schemaTeachers = StructType.fromJson({'fields': [
   {'metadata': {}, 'name': 'Teacher_First_Project_Posted_Date', 'nullable': True, 'type': 'date'}],
  'type': 'struct'})
 
-#-----------------------------PATHS
+#--------------PATHS--------------
 
 datasetPath = "../dataset_donations/"
 donationsPath = datasetPath + "Donations.csv"
@@ -111,6 +114,68 @@ projects = spark.read.schema(schemaProjects).format("csv").options(header="true"
 resources = spark.read.schema(schemaResources).format("csv").options(header="true").load(resourcesPath)
 schools = spark.read.schema(schemaSchools).format("csv").options(header="true").load(schoolsPath)
 teachers = spark.read.schema(schemaTeachers).format("csv").options(header="true").load(teachersPath)
+
+def regressionModel():
+  # schools = schools.alias('schools')
+  # projects = projects.alias('projects')
+
+  projetos = projects.filter((projects.Project_Current_Status == 'Expired') | (projects.Project_Current_Status == 'Fully Funded'))\
+            .join(schools, projects.School_ID == schools.School_ID, how = 'left')
+             
+  
+  lista_projectos = []
+  for row in projetos.head(100):
+    lista_projectos.append(str(row.Project_ID))
+
+  doacoes = donations.filter(donations.Project_ID.isin(lista_projectos))\
+    .groupby('Project_ID')\
+    .sum('Donation_Amount').withColumnRenamed("sum(Donation_Amount)", "Sum_Donations")\
+    .withColumnRenamed("Project_ID", "Proj_ID")
+
+  projetos.createOrReplaceTempView('projetos')
+  doacoes.createOrReplaceTempView('doacoes')
+
+  query = ('SELECT * \
+            FROM doacoes, projetos  \
+            WHERE Project_ID = Proj_ID')
+
+  projetos = spark.sql(query)
+
+  projetos = projetos.withColumn('Has_Proj_Short_Desc', projetos.Project_Short_Description.isNotNull())
+  projetos = projetos.withColumn('Has_Proj_Need_Stat', projetos.Project_Need_Statement.isNotNull())
+  projetos = projetos.withColumn('Has_Proj_Subject_Category', projetos.Project_Subject_Category_Tree.isNotNull())
+  projetos = projetos.withColumn('Has_Proj_Resource_Category', projetos.Project_Resource_Category.isNotNull())
+  projetos = projetos.withColumn("Percentage_Funded", projetos.Sum_Donations/projetos.Project_Cost * 100)
+  
+  # intervalo de tempo
+
+  X = ['Teacher_ID',
+       'Project_Type',
+       'Project_Grade_Level_Category',
+       'Project_Cost',
+       'Has_Proj_Short_Desc',
+       'Has_Proj_Need_Stat',
+       'Has_Proj_Subject_Category',
+       'Has_Proj_Resource_Category',
+       'School_Metro_Type',
+       'School_Percentage_Free_Lunch',
+       'School_State',
+       'School_City',
+       'School_District']
+  '''
+  encoder = OneHotEncoderEstimator(
+    inputCols=["gender_numeric"],  
+    outputCols=["gender_vector"]
+  )
+  encoder.fit(projetos.Teacher_ID)'''
+  #parecia resultar mas dá null T.T -> já estive a pesquisar porquê mas resultado da procura não se aplica ao nosso caso 
+  projetos = projetos.withColumn("Teacher_ID", projetos.Teacher_ID.cast(IntegerType())).show()
+  #vectorAssembler = VectorAssembler(inputCols = X, outputCol = 'features')
+  #vprojetos_df = vectorAssembler.transform(projetos)
+  #vprojetos_df = vprojetos_df.select(['features', 'Percentage_Funded'])
+  #vprojetos_df.show(3)
+
+
 
 @app.route('/donorschoose/projects/findByDonor', methods=['GET'])
 def find_by_donor():
@@ -250,6 +315,8 @@ def home():
     return jsonify("Bem-vindo ao donorschoose!")
 
 if __name__ == '__main__':
+    regressionModel()
     app.run(host="0.0.0.0", port=5000)
+    
 
 
