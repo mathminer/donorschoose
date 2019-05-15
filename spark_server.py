@@ -10,12 +10,15 @@ findspark.init()
 
 from flask import Flask, jsonify, request
 
+from pyspark.ml.feature import StringIndexer
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SparkSession, SQLContext, types
 from pyspark.sql.types import StructType, IntegerType, StringType
 from pyspark.ml.feature import VectorAssembler
-from pyspark.mllib.regression import LinearRegressionModel
+#from pyspark.mllib.regression import LinearRegressionModel
+from pyspark.ml.regression import LinearRegression
 from pyspark.sql.functions import Column
+from pyspark.ml import Pipeline
 
 app = Flask(__name__)
 
@@ -116,11 +119,10 @@ schools = spark.read.schema(schemaSchools).format("csv").options(header="true").
 teachers = spark.read.schema(schemaTeachers).format("csv").options(header="true").load(teachersPath)
 
 def regressionModel():
-  # schools = schools.alias('schools')
-  # projects = projects.alias('projects')
+  projects2 = projects.withColumnRenamed('School_ID','School_ID_Projetos')
 
-  projetos = projects.filter((projects.Project_Current_Status == 'Expired') | (projects.Project_Current_Status == 'Fully Funded'))\
-            .join(schools, projects.School_ID == schools.School_ID, how = 'left')
+  projetos = projects2.filter((projects2.Project_Current_Status == 'Expired') | (projects2.Project_Current_Status == 'Fully Funded'))\
+            .join(schools, projects2.School_ID_Projetos == schools.School_ID, how = 'left')
              
   
   lista_projectos = []
@@ -145,11 +147,9 @@ def regressionModel():
   projetos = projetos.withColumn('Has_Proj_Need_Stat', projetos.Project_Need_Statement.isNotNull())
   projetos = projetos.withColumn('Has_Proj_Subject_Category', projetos.Project_Subject_Category_Tree.isNotNull())
   projetos = projetos.withColumn('Has_Proj_Resource_Category', projetos.Project_Resource_Category.isNotNull())
-  projetos = projetos.withColumn("Percentage_Funded", projetos.Sum_Donations/projetos.Project_Cost * 100)
-  
-  # intervalo de tempo
-
-  X = ['Teacher_ID',
+ 
+  projetos = projetos.withColumn("Percentage_Funded", projetos.Sum_Donations/projetos.Project_Cost * 100)\
+    .select('Teacher_ID',
        'Project_Type',
        'Project_Grade_Level_Category',
        'Project_Cost',
@@ -161,21 +161,105 @@ def regressionModel():
        'School_Percentage_Free_Lunch',
        'School_State',
        'School_City',
-       'School_District']
-  '''
-  encoder = OneHotEncoderEstimator(
-    inputCols=["gender_numeric"],  
-    outputCols=["gender_vector"]
-  )
-  encoder.fit(projetos.Teacher_ID)'''
-  #parecia resultar mas dá null T.T -> já estive a pesquisar porquê mas resultado da procura não se aplica ao nosso caso 
-  projetos = projetos.withColumn("Teacher_ID", projetos.Teacher_ID.cast(IntegerType())).show()
-  #vectorAssembler = VectorAssembler(inputCols = X, outputCol = 'features')
-  #vprojetos_df = vectorAssembler.transform(projetos)
-  #vprojetos_df = vprojetos_df.select(['features', 'Percentage_Funded'])
-  #vprojetos_df.show(3)
+       'School_District',
+       'Percentage_Funded')
 
+  X = ['Teacher_ID_index',
+       'Project_Type_index',
+       'Project_Grade_Level_Category_index',
+       'Project_Cost',
+       'Has_Proj_Short_Desc',
+       'Has_Proj_Need_Stat',
+       'Has_Proj_Subject_Category',
+       'Has_Proj_Resource_Category',
+       'School_Metro_Type_index',
+       'School_Percentage_Free_Lunch',
+       'School_State_index',
+       'School_City_index',
+       'School_District_index',
+       'Percentage_Funded']
+  
+  indexers = [StringIndexer(inputCol=column, outputCol=column+"_index").fit(projetos) \
+    for column in list(set(projetos.columns)-set(['Project_Cost','School_Percentage_Free_Lunch','Has_Proj_Short_Desc',\
+      'Has_Proj_Need_Stat','Has_Proj_Subject_Category','Has_Proj_Resource_Category'])) ]
 
+  pipeline = Pipeline(stages=indexers)
+  projetos_transformados = pipeline.fit(projetos).transform(projetos)
+
+  vectorAssembler = VectorAssembler(inputCols = X, outputCol = 'features')
+  vprojetos_df = vectorAssembler.transform(projetos_transformados)
+  vprojetos_df = vprojetos_df.select(['features', 'Percentage_Funded'])
+
+  splits = vprojetos_df.randomSplit([0.7, 0.3])
+  train_df = splits[0]
+  test_df = splits[1]
+  
+  lr = LinearRegression(featuresCol = 'features', labelCol='Percentage_Funded', maxIter=10, regParam=0.3, elasticNetParam=0.8)
+
+  lr_model = lr.fit(train_df)
+
+  print("Coefficients: " + str(lr_model.coefficients))
+  print("Intercept: " + str(lr_model.intercept))
+  trainingSummary = lr_model.summary
+  print("RMSE: %f" % trainingSummary.rootMeanSquaredError)
+  print("r2: %f" % trainingSummary.r2)
+  train_df.describe().show()
+
+@app.route('/donorschoose/projects/predictPercentage', methods=['GET'])
+def predict_percentage():
+  project = request.args.get('project', None)
+  
+  projecto_resultado = projects.filter(projects.Project_ID == project).head(1)
+
+  projects2 = projecto_resultado.withColumnRenamed('School_ID','School_ID_Projetos')
+
+  projetos = projects2.filter((projects2.Project_Current_Status == 'Expired') | (projects2.Project_Current_Status == 'Fully Funded'))\
+            .join(schools, projects2.School_ID_Projetos == schools.School_ID, how = 'left')
+             
+  
+  lista_projectos = []
+  for row in projetos.head(100):
+    lista_projectos.append(str(row.Project_ID))
+
+  doacoes = donations.filter(donations.Project_ID.isin(lista_projectos))\
+    .groupby('Project_ID')\
+    .sum('Donation_Amount').withColumnRenamed("sum(Donation_Amount)", "Sum_Donations")\
+    .withColumnRenamed("Project_ID", "Proj_ID")
+
+  projetos.createOrReplaceTempView('projetos')
+  doacoes.createOrReplaceTempView('doacoes')
+
+  query = ('SELECT * \
+            FROM doacoes, projetos  \
+            WHERE Project_ID = Proj_ID')
+
+  projetos = spark.sql(query)
+
+  projetos = projetos.withColumn('Has_Proj_Short_Desc', projetos.Project_Short_Description.isNotNull())
+  projetos = projetos.withColumn('Has_Proj_Need_Stat', projetos.Project_Need_Statement.isNotNull())
+  projetos = projetos.withColumn('Has_Proj_Subject_Category', projetos.Project_Subject_Category_Tree.isNotNull())
+  projetos = projetos.withColumn('Has_Proj_Resource_Category', projetos.Project_Resource_Category.isNotNull())
+ 
+  projetos = projetos.withColumn("Percentage_Funded", projetos.Sum_Donations/projetos.Project_Cost * 100)\
+    .select('Teacher_ID',
+       'Project_Type',
+       'Project_Grade_Level_Category',
+       'Project_Cost',
+       'Has_Proj_Short_Desc',
+       'Has_Proj_Need_Stat',
+       'Has_Proj_Subject_Category',
+       'Has_Proj_Resource_Category',
+       'School_Metro_Type',
+       'School_Percentage_Free_Lunch',
+       'School_State',
+       'School_City',
+       'School_District',
+       'Percentage_Funded')
+
+  #predictions = lr_model.transform()
+  #predictions.select("prediction","MV","features")
+  answer = []
+  return jsonify(answer)
 
 @app.route('/donorschoose/projects/findByDonor', methods=['GET'])
 def find_by_donor():
