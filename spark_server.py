@@ -17,6 +17,13 @@ from pyspark.ml.feature import VectorAssembler
 from pyspark.mllib.regression import LinearRegressionModel
 from pyspark.sql.functions import Column
 
+#for k-means
+from pyspark.ml.feature import OneHotEncoder, StringIndexer
+from pyspark.ml.clustering import KMeans
+from pyspark.ml.evaluation import ClusteringEvaluator
+from pyspark.ml.linalg import Vectors
+from pyspark.ml.feature import VectorAssembler
+
 app = Flask(__name__)
 
 conf = SparkConf().setAppName('DonorschooseApp')
@@ -114,6 +121,51 @@ projects = spark.read.schema(schemaProjects).format("csv").options(header="true"
 resources = spark.read.schema(schemaResources).format("csv").options(header="true").load(resourcesPath)
 schools = spark.read.schema(schemaSchools).format("csv").options(header="true").load(schoolsPath)
 teachers = spark.read.schema(schemaTeachers).format("csv").options(header="true").load(teachersPath)
+
+
+def K_means():
+    knr = 2;
+	cols = ["Project_Subject_Category_Tree","Project_Subject_Subcategory_Tree","Project_Grade_Level_Category","Project_Resource_Category"]
+	colsa = []
+
+	df = projects.select(cols)
+
+	df = df.where(df.Project_Subject_Category_Tree.isNotNull())
+	df = df.where(df.Project_Subject_Subcategory_Tree.isNotNull())
+	df = df.where(df.Project_Grade_Level_Category.isNotNull())
+	df = df.where(df.Project_Resource_Category.isNotNull())
+
+
+	#df.show()
+	
+	for i in range(len(cols)):
+		stringIndexer = StringIndexer(inputCol=cols[i], outputCol=cols[i]+"a")
+		model = stringIndexer.fit(df)
+		df = model.transform(df)
+		colsa.append(cols[i]+"a")
+
+	
+	
+	for i in range(len(cols)):
+		encoder = OneHotEncoder(inputCol=cols[i]+"a", outputCol=cols[i]+"v")
+		encoded = encoder.transform(df)
+	
+		
+	assembler = VectorAssembler(
+	inputCols=colsa,
+	outputCol="features")
+	output = assembler.transform(encoded)
+
+	output.show()
+
+	'''
+	# Trains a k-means model.
+	kmeans = KMeans().setK(2).setSeed(1)
+	model = kmeans.fit(output)
+	# Evaluate clustering by computing Silhouette score
+	# print(str(knr) + str(ClusteringEvaluator()));
+	'''
+
 
 def regressionModel():
   # schools = schools.alias('schools')
