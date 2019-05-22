@@ -143,42 +143,88 @@ projetos_transformados = None
 X = []
 
 
-'''def K_means():
-  knr = 2
-  cols = ["Project_Subject_Category_Tree","Project_Subject_Subcategory_Tree","Project_Grade_Level_Category","Project_Resource_Category"]
-  colsa = []
-  
-  df = projects.select(cols)
-  
-  df = df.where(df.Project_Subject_Category_Tree.isNotNull())
-  df = df.where(df.Project_Subject_Subcategory_Tree.isNotNull())
-  df = df.where(df.Project_Grade_Level_Category.isNotNull())
-  df = df.where(df.Project_Resource_Category.isNotNull())
-  for i in range(len(cols)):
-  	stringIndexer = StringIndexer(inputCol=cols[i], outputCol=cols[i]+"a")
-    model = stringIndexer.fit(df)
-    df = model.transform(df)
-    colsa.append(cols[i]+"a")
+@app.route('/donorschoose/projects/findSimillar', methods=['GET'])
+def findSimillar():
+
+	#Dealing with the server request
+	#project_ID = request.args.get('project_ID', None)
+	project_ID = 'afd99a01739ad5557b51b1ba0174e832'
+	projects.createOrReplaceTempView('projects')
+
+	silhouette = []
+
+	cols = ["Project_Subject_Category_Tree","Project_Subject_Subcategory_Tree","Project_Grade_Level_Category","Project_Resource_Category"]
+	colsa = []
+
+	#df = projects.select(cols)
+	df = projects
+
+	df = df.where(df.Project_Subject_Category_Tree.isNotNull())
+	df = df.where(df.Project_Subject_Subcategory_Tree.isNotNull())
+	df = df.where(df.Project_Grade_Level_Category.isNotNull())
+	df = df.where(df.Project_Resource_Category.isNotNull())
+
+	for i in range(len(cols)):
+		stringIndexer = StringIndexer(inputCol=cols[i], outputCol=cols[i]+"a")
+		model = stringIndexer.fit(df)
+		df = model.transform(df)
+		colsa.append(cols[i]+"a")
 
 	
 	
-  for i in range(len(cols)):
-	  encoder = OneHotEncoder(inputCol=cols[i]+"a", outputCol=cols[i]+"v")
-	  encoded = encoder.transform(df)
-	
+	for i in range(len(cols)):
+		encoder = OneHotEncoder(inputCol=cols[i]+"a", outputCol=cols[i]+"v")
+		encoded = encoder.transform(df)	
+
 		
-  assembler = VectorAssembler(
-  inputCols=colsa,
-  outputCol="features")
-  output = assembler.transform(encoded)
+	assembler = VectorAssembler(
+	inputCols=colsa,
+	outputCol="features")
+	output = assembler.transform(encoded)
 
-  output.show()
+	kmax = 10; #optimal K happens at k=4
 
-  # Trains a k-means model.
-  kmeans = KMeans().setK(2).setSeed(1)
-  model = kmeans.fit(output)
-  # Evaluate clustering by computing Silhouette score
-  # print(str(knr) + str(ClusteringEvaluator()));'''
+	for i in range(2,kmax):
+		# Trains a k-means model.
+		kmeans = KMeans().setK(i).setSeed(1)
+		model = kmeans.fit(output)
+		# Evaluate clustering by computing Silhouette score
+		predictions = model.transform(output)
+
+		evaluator = ClusteringEvaluator()
+		silhouette.append([i,evaluator.evaluate(predictions)])
+
+	k_optimal = np.array(silhouette)[int(np.where(np.array(silhouette)[:,1]==np.amax(np.array(silhouette)[:,1]))[0]),0]
+	kmeans = KMeans().setK(k_optimal).setSeed(1)
+	model = kmeans.fit(output)
+	predictions = model.transform(output)
+	
+	#associated class
+	t = predictions.where(predictions.Project_ID==project_ID).select('prediction').take(1)
+
+	#get all examples with the same class
+	t = predictions.filter(predictions.prediction==t[0].asDict()['prediction']).filter(predictions.Project_Current_Status != 'Expired').select('Project_ID')
+
+	#convert then to a list
+	Id_List = [row['Project_ID'] for row in t.collect()]
+
+	l = Id_List	
+	t = tuple(l)
+
+	query = 'SELECT \
+  * \
+  FROM projects  \
+  WHERE \
+  projects.Project_ID IN {}'.format(t)
+  
+	result = spark.sql(query).head(100)
+    
+	answer = []
+	for row in result:
+		answer.append("Project: " + str(row.Project_ID))
+		answer.append("-----------------------")
+    
+	return jsonify(answer)
 
 
 
