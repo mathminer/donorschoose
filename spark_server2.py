@@ -5,14 +5,16 @@ import random
 import string
 import datetime
 
-import findspark
-findspark.init()
+#import findspark
+#findspark.init()
 
 from flask import Flask, jsonify, request
 
 import os
 from google.cloud import dataproc_v1, storage
 from googleapiclient import discovery
+
+'''
 from pyspark.ml.feature import StringIndexer
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SparkSession, SQLContext, types
@@ -28,7 +30,7 @@ from pyspark.ml.feature import OneHotEncoder, StringIndexer
 from pyspark.ml.clustering import KMeans
 from pyspark.ml.evaluation import ClusteringEvaluator
 from pyspark.ml.linalg import Vectors
-
+'''
 app = Flask(__name__)
 
 '''
@@ -151,13 +153,13 @@ dataproc_cluster = dataproc_cluster_client.get_cluster(project_id,region,cluster
 dataproc_cluster_bucket = dataproc_cluster.config.config_bucket
 storage_client = storage.Client()
 
-
+'''
 lr_model = 0
 projetos_transformados = None
 X = []
 
 
-'''def K_means():
+def K_means():
   knr = 2
   cols = ["Project_Subject_Category_Tree","Project_Subject_Subcategory_Tree","Project_Grade_Level_Category","Project_Resource_Category"]
   colsa = []
@@ -195,7 +197,7 @@ X = []
   # print(str(knr) + str(ClusteringEvaluator()));'''
 
 
-
+'''
 def regressionModel():
   global projetos_transformados
   global lr_model
@@ -296,7 +298,7 @@ def predict_percentage():
   answer = []
   for row in result:
        answer.append('Prediction for project ' + project + ':' + str(row.prediction))
-  return jsonify(answer)
+  return jsonify(answer)'''
 
 @app.route('/donorschoose/projects/findByDonor', methods=['GET'])
 def find_by_donor():
