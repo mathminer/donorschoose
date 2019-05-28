@@ -129,14 +129,15 @@ donors = spark.read.schema(schemaDonors).format("csv").options(header="true").lo
 projects = spark.read.schema(schemaProjects).format("csv").options(header="true").load(projectsPath)
 resources = spark.read.schema(schemaResources).format("csv").options(header="true").load(resourcesPath)
 schools = spark.read.schema(schemaSchools).format("csv").options(header="true").load(schoolsPath)
-teachers = spark.read.schema(schemaTeachers).format("csv").options(header="true").load(teachersPath)'''
+teachers = spark.read.schema(schemaTeachers).format("csv").options(header="true").load(teachersPath)
+'''
 
-donations =spark.read.csv(donationsPath)
-donors = spark.read.csv(donorsPath)
-projects = spark.read.csv(projectsPath)
-resources = spark.read.csv(resourcesPath)
-schools = spark.read.csv(schoolsPath)
-teachers = spark.read.csv(teachersPath)
+donations =spark.read.schema(schemaDonations).csv(donationsPath)
+donors = spark.read.schema(schemaDonors).csv(donorsPath)
+projects = spark.read.schema(schemaProjects).csv(projectsPath)
+resources = spark.read.schema(schemaResources).csv(resourcesPath)
+schools = spark.read.schema(schemaSchools).csv(schoolsPath)
+teachers = spark.read.schema(schemaTeachers).csv(teachersPath)
 
 lr_model = 0
 projetos_transformados = None
@@ -329,20 +330,7 @@ def find_by_teacher():
     
     projects.createOrReplaceTempView('projects')
     donations.createOrReplaceTempView('donations')
-    
-    '''projectos_professor = projects.filter(projects.Teacher_ID == teacher)\
-    .select('Project_ID','Project_Title','Project_Cost','Project_Expiration_Date')
-    
-    lista_projectos = []
-    for row in projectos_professor:
-        lista_projectos.append(str(row.Project_ID))
-    
-    doacoes = donations.filter(donations.Project_ID.isin(lista_projectos))\
-    .groupby('Project_ID')\
-    .sum('Donation_Amount')
-    
-    result = projectos_professor.join(doacoes, projectos_professor.Project_ID == doacoes.Project_ID).show()'''
-    
+           
     query = ('SELECT P.Project_ID, P.Project_Title, P.Project_Cost, P.Project_Expiration_Date,\
           SUM(D.Donation_Amount) as Total_Donated \
           FROM projects  as P, donations as D\
