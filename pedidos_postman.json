@@ -1,0 +1,240 @@
+{
+	"info": {
+		"_postman_id": "ff05afd5-8ab3-41c8-9a3c-007a972f0726",
+		"name": "spark server_local",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "findByDonor",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://0.0.0.0:5000/donorschoose/projects/findByDonor?donor=000210a2a948e929d8e04897dc921d91",
+					"protocol": "http",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"findByDonor"
+					],
+					"query": [
+						{
+							"key": "donor",
+							"value": "000210a2a948e929d8e04897dc921d91"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "findByStatus",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://0.0.0.0:5000/donorschoose/projects/findByStatus?status=Live",
+					"protocol": "http",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"findByStatus"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "Live"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "findByTeacher",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://0.0.0.0:5000/donorschoose/projects/findByTeacher?teacher_id=2d21f0ef776380282f73345ce2228f6a",
+					"protocol": "http",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"findByTeacher"
+					],
+					"query": [
+						{
+							"key": "teacher_id",
+							"value": "2d21f0ef776380282f73345ce2228f6a"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "findBySchool",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "localhost:5000/donorschoose/projects/findBySchool?school_id=e354642bc061860d8d547a49f59de622",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"findBySchool"
+					],
+					"query": [
+						{
+							"key": "school_id",
+							"value": "e354642bc061860d8d547a49f59de622"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "findByNeed",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/donorschoose/projects/findByNeed?state=\"Texas\"",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"findByNeed"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "\"Texas\""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "predictPercentage",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/donorschoose/projects/predictPercentage?project=fcc108d8895e2d19adc23c17e9855031",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"predictPercentage"
+					],
+					"query": [
+						{
+							"key": "project",
+							"value": "fcc108d8895e2d19adc23c17e9855031"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "findSimilar",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:5000/donorschoose/projects/findSimilar?project=afd99a01739ad5557b51b1ba0174e832",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"donorschoose",
+						"projects",
+						"findSimilar"
+					],
+					"query": [
+						{
+							"key": "project",
+							"value": "afd99a01739ad5557b51b1ba0174e832"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
