@@ -1,0 +1,7 @@
+http://0.0.0.0:5000/donorschoose/projects/findByDonor?donor=000210a2a948e929d8e04897dc921d91
+http://0.0.0.0:5000/donorschoose/projects/findByStatus?status=Live
+http://0.0.0.0:5000/donorschoose/projects/findByTeacher?teacher_id=2d21f0ef776380282f73345ce2228f6a
+http://9.9.9.1:5000/donorschoose/projects/findBySchool?school_id=e354642bc061860d8d547a49f59de622
+http://127.0.0.1:5000/donorschoose/projects/findByNeed?state="Texas"
+http://127.0.0.1:5000/donorschoose/projects/predictPercentage?project=fcc108d8895e2d19adc23c17e9855031
+http://localhost:5000/donorschoose/projects/findSimilar?project=afd99a01739ad5557b51b1ba0174e832
