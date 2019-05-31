@@ -171,8 +171,6 @@ def findSimillar():
 		df = model.transform(df)
 		colsa.append(cols[i]+"a")
 
-	
-	
 	for i in range(len(cols)):
 		encoder = OneHotEncoder(inputCol=cols[i]+"a", outputCol=cols[i]+"v")
 		encoded = encoder.transform(df)	
@@ -197,7 +195,10 @@ def findSimillar():
 
 	k_optimal = np.array(silhouette)[int(np.where(np.array(silhouette)[:,1]==np.amax(np.array(silhouette)[:,1]))[0]),0]
 	kmeans = KMeans().setK(k_optimal).setSeed(1)
-	model = kmeans.fit(output)
+	
+  model = kmeans.fit(output)
+
+  #GRAVAR O PREDICTIONS
 	predictions = model.transform(output)
 	
 	#associated class
