@@ -7,4 +7,4 @@ COPY . /donorschoose
 WORKDIR /donorschoose
 RUN pip install -r requirements.txt
 ENTRYPOINT ["python"]
-CMD ["server.py"]
+CMD ["spark_server2.py"]
